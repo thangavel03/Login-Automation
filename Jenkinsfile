@@ -1,19 +1,22 @@
 pipeline {
     agent any
 
+    environment {
+        CYPRESS_CACHE_FOLDER = "${WORKSPACE}/.cache/Cypress"
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                // Clone the GitHub repository
-                git url: 'https://github.com/thangavel03/Login-Automation.git', branch: 'main'
+                git branch: 'main', url: 'https://github.com/thangavel03/Login-Automation.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Ensure Node.js and npm are installed
                     bat 'npm install'
+                    bat 'npx cypress install'
                 }
             }
         }
@@ -21,7 +24,6 @@ pipeline {
         stage('Run Cypress Tests') {
             steps {
                 script {
-                    // Execute Cypress tests
                     bat 'npx cypress run'
                 }
             }
@@ -30,8 +32,8 @@ pipeline {
 
     post {
         always {
-            // Save test results
             archiveArtifacts artifacts: 'cypress/screenshots/**/*', allowEmptyArchive: true
+            junit 'cypress/results/**/*.xml'
         }
     }
 }
