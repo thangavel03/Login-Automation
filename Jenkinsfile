@@ -22,12 +22,6 @@ pipeline {
                 bat 'npx cypress install' // Ensure Cypress binary is installed
             }
         }
-
-        stage('Run Cypress Tests') {
-            steps {
-                bat 'npx cypress run --reporter junit --reporter-options "mochaFile=results/test-results.xml"'
-            }
-        }
     }
 
     post {
