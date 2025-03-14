@@ -9,10 +9,13 @@ pipeline {
         CYPRESS_CACHE_FOLDER = "${WORKSPACE}/.cache/Cypress"
     }
 
-    stages {
+    stages {  // ✅ Missing "stages" block added
         stage('Checkout') {
             steps {
-                git 'https://github.com/thangavel03/Login-Automation'
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']], // Ensure correct branch
+                    userRemoteConfigs: [[url: 'https://github.com/thangavel03/Login-Automation']]
+                ])
             }
         }
 
@@ -20,6 +23,12 @@ pipeline {
             steps {
                 bat 'npm install'
                 bat 'npx cypress install' // Ensure Cypress binary is installed
+            }
+        }
+
+        stage('Run Cypress Tests') { // ✅ Added a test execution stage
+            steps {
+                bat 'npx cypress run --reporter junit --reporter-options "mochaFile=results/results.xml,toConsole=true"'
             }
         }
     }
