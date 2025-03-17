@@ -36,7 +36,7 @@ describe('Login Page Automation', () => {
         } else {
           // Validate successful login by checking URL
           cy.url().should('include', expectedUrl);
-          cy.contains('Logged In Successfully').should('be.visible');
+          cy.contains('Logged  Successfully').should('be.visible');
           cy.log(`Successfully logged in and redirected to ${expectedUrl}`);
         }
 
