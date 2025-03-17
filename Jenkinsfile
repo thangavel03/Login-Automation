@@ -27,7 +27,7 @@ pipeline {
 
         stage('Run Cypress Tests') {
             steps {
-                bat 'npx cypress run --browser chrome --headless --config video=false --spec "cypress/e2e/**/*.*"'
+                bat 'npx cypress run --browser chrome --headless --config video=false'
             }
         }
     }
@@ -35,7 +35,9 @@ pipeline {
     post {
         always {
             echo 'Test execution completed.'
-            archiveArtifacts artifacts: '**/cypress/screenshots/**', fingerprint: true
+
+            // Capture screenshots from all subfolders
+            archiveArtifacts artifacts: '**/cypress/screenshots/**/*', fingerprint: true
 
             emailext(
                 subject: "Cypress Test Report: Build #${env.BUILD_NUMBER}",
