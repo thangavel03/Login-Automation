@@ -19,12 +19,6 @@ pipeline {
             }
         }
 
-        stage('Debug Workspace') {
-            steps {
-                bat 'dir /s'
-            }
-        }
-
         stage('Run Cypress Tests') {
             steps {
                 bat 'npx cypress run --browser chrome --headless --config video=false'
@@ -36,9 +30,13 @@ pipeline {
         always {
             echo 'Test execution completed.'
 
-            // Capture screenshots from all subfolders
+            // Archive Screenshots
             archiveArtifacts artifacts: '**/cypress/screenshots/**/*', fingerprint: true
 
+            // Archive HTML Report
+            archiveArtifacts artifacts: 'cypress/reports/html/**/*', fingerprint: true
+
+            // Email the report
             emailext(
                 subject: "Cypress Test Report: Build #${env.BUILD_NUMBER}",
                 body: """
@@ -48,7 +46,7 @@ pipeline {
                 - Build Number: ${env.BUILD_NUMBER}
                 - Status: ${currentBuild.currentResult}
 
-                Logs: ${env.BUILD_URL}
+                📊 [View Detailed Report](${env.BUILD_URL}artifact/cypress/reports/html/index.html)
                 """,
                 to: 'thangavelra03@gmail.com'
             )
