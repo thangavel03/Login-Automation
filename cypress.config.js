@@ -15,7 +15,7 @@ module.exports = defineConfig({
       return config;
     },
 
-    baseUrl: 'http://localhost:8080',
+    baseUrl: 'https://practicetestautomation.com/practice-test-login/',
     retries: 2,
     video: true,
     screenshotOnRunFailure: true,
