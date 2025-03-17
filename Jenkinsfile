@@ -1,54 +1,141 @@
 pipeline {
     agent any
 
-    triggers {
-        cron('H/30 * * * *') // Runs every 30 minutes
-    }
-
     environment {
-        CYPRESS_CACHE_FOLDER = "${WORKSPACE}/.cache/Cypress"
+        CI = 'true'
     }
 
-    stages {  // ✅ Missing "stages" block added
+    stages {
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']], // Ensure correct branch
-                    userRemoteConfigs: [[url: 'https://github.com/thangavel03/Login-Automation']]
-                ])
+                git branch: 'main', url: 'https://github.com/thangavel03/Login-Automation'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm install'
-                bat 'npx cypress install' // Ensure Cypress binary is installed
+                bat 'npm ci'  // Clean install for consistent results
+                bat 'npx cypress install'
             }
         }
 
-        stage('Run Cypress Tests') { // ✅ Added a test execution stage
+        stage('Run Cypress Tests') {
             steps {
-                bat 'npx cypress run --reporter junit --reporter-options "mochaFile=results/results.xml,toConsole=true"'
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    bat 'npx cypress run --browser chrome --headless'
+                }
+            }
+        }
+
+        stage('Generate Report') {
+            steps {
+                bat 'npx mochawesome-merge "cypress/reports/*.json" -o mochareport.json'
+                bat 'npx marge mochareport.json --reportDir cypress/reports/html'
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'results/*.xml', fingerprint: true
-            emailext (
-                to: 'thangavelra2003@gmail.com',
-                subject: "Cypress Test Report - ${currentBuild.fullDisplayName}",
+            echo 'Test execution completed.'
+
+            // Archive screenshots and reports
+            archiveArtifacts artifacts: '**/cypress/{screenshots,reports}/**', fingerprint: true
+
+            // Publish HTML report to Jenkins
+            publishHTML(target: [
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'cypress/reports/html',
+                reportFiles: 'index.html',
+                reportName: 'Cypress Test Report'
+            ])
+
+            // Send email notification
+            emailext(
+                subject: "Cypress Test Report: Build #${env.BUILD_NUMBER}",
                 body: """
-                Hello,
+                Jenkins Cypress Test Report
 
-                The Cypress test run has completed.
-                Status: ${currentBuild.currentResult}
+                - Job: ${env.JOB_NAME}
+                - Build Number: ${env.BUILD_NUMBER}
+                - Status: ${currentBuild.currentResult}
 
-                Check the Jenkins build here: ${env.BUILD_URL}
+                View Full Report: ${env.BUILD_URL}/HTML_20Report/
                 """,
-                attachLog: true,
-                attachmentsPattern: 'results/*.xml'
+                to: 'thangavelra03@gmail.com'
+            )
+        }
+    }
+}
+pipeline {
+    agent any
+
+    environment {
+        CI = 'true'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/thangavel03/Login-Automation'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                bat 'npm ci'  // Clean install for consistent results
+                bat 'npx cypress install'
+            }
+        }
+
+        stage('Run Cypress Tests') {
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    bat 'npx cypress run --browser chrome --headless'
+                }
+            }
+        }
+
+        stage('Generate Report') {
+            steps {
+                bat 'npx mochawesome-merge "cypress/reports/*.json" -o mochareport.json'
+                bat 'npx marge mochareport.json --reportDir cypress/reports/html'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Test execution completed.'
+
+            // Archive screenshots and reports
+            archiveArtifacts artifacts: '**/cypress/{screenshots,reports}/**', fingerprint: true
+
+            // Publish HTML report to Jenkins
+            publishHTML(target: [
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'cypress/reports/html',
+                reportFiles: 'index.html',
+                reportName: 'Cypress Test Report'
+            ])
+
+            // Send email notification
+            emailext(
+                subject: "Cypress Test Report: Build #${env.BUILD_NUMBER}",
+                body: """
+                Jenkins Cypress Test Report
+
+                - Job: ${env.JOB_NAME}
+                - Build Number: ${env.BUILD_NUMBER}
+                - Status: ${currentBuild.currentResult}
+
+                View Full Report: ${env.BUILD_URL}/HTML_20Report/
+                """,
+                to: 'thangavelra03@gmail.com'
             )
         }
     }
