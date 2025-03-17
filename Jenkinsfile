@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/thangavel03/GreenKart_Automation/'
+                git branch: 'main', url: 'https://github.com/thangavel03/YourRepo.git'
             }
         }
 
@@ -19,9 +19,15 @@ pipeline {
             }
         }
 
+        stage('Debug Workspace') {
+            steps {
+                bat 'dir /s'
+            }
+        }
+
         stage('Run Cypress Tests') {
             steps {
-                bat 'npx cypress run --browser chrome --headless --config video=false'
+                bat 'npx cypress run --browser chrome --headless --config video=false --spec "cypress/e2e/**/*.*"'
             }
         }
     }
@@ -29,7 +35,7 @@ pipeline {
     post {
         always {
             echo 'Test execution completed.'
-            archiveArtifacts artifacts: '**/cypress/reports/mochawesome/**', fingerprint: true
+            archiveArtifacts artifacts: '**/cypress/screenshots/**', fingerprint: true
 
             emailext(
                 subject: "Cypress Test Report: Build #${env.BUILD_NUMBER}",
@@ -42,8 +48,6 @@ pipeline {
 
                 Logs: ${env.BUILD_URL}
                 """,
-                attachLog: true,
-                attachmentsPattern: '**/cypress/reports/mochawesome/*.html',
                 to: 'thangavelra03@gmail.com'
             )
         }
