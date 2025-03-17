@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/thangavel03/YourRepo.git'
+                git branch: 'main', url: 'https://github.com/thangavel03/Login-Automation'
             }
         }
 
