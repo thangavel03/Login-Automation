@@ -3,7 +3,12 @@ const { defineConfig } = require("cypress");
 module.exports = defineConfig({
   e2e: {
     setupNodeEvents(on, config) {
-      require('cypress-mochawesome-reporter/plugin')(on);
+      // Ensure plugin exists and loads
+      try {
+        require('cypress-mochawesome-reporter/plugin')(on);
+      } catch (error) {
+        console.error("Error loading Mochawesome plugin:", error);
+      }
 
       on('task', {
         log(message) {
@@ -15,7 +20,7 @@ module.exports = defineConfig({
       return config;
     },
 
-    baseUrl: 'https://practicetestautomation.com/practice-test-login/',
+    baseUrl: 'https://practicetestautomation.com',
     retries: 2,
     video: true,
     screenshotOnRunFailure: true,
@@ -24,7 +29,7 @@ module.exports = defineConfig({
     numTestsKeptInMemory: 5,
 
     env: {
-      loginUrl: '/login',
+      loginUrl: '/practice-test-login/',
     },
 
     viewportWidth: 1280,
@@ -32,5 +37,11 @@ module.exports = defineConfig({
     specPattern: "cypress/e2e/**/*.cy.js",
 
     reporter: "cypress-mochawesome-reporter",
+    reporterOptions: {
+      reportDir: "cypress/reports/mochawesome",
+      overwrite: false,
+      html: true,
+      json: true,
+    },
   },
 });

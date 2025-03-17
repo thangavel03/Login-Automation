@@ -8,29 +8,20 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/thangavel03/Login-Automation'
+                git branch: 'main', url: 'https://github.com/thangavel03/GreenKart_Automation/'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm ci'  // Clean install for consistent results
+                bat 'npm install'
                 bat 'npx cypress install'
             }
         }
 
         stage('Run Cypress Tests') {
             steps {
-                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-                    bat 'npx cypress run --browser chrome --headless'
-                }
-            }
-        }
-
-        stage('Generate Report') {
-            steps {
-                bat 'npx mochawesome-merge "cypress/reports/*.json" -o mochareport.json'
-                bat 'npx marge mochareport.json --reportDir cypress/reports/html'
+                bat 'npx cypress run --browser chrome --headless --config video=false'
             }
         }
     }
@@ -38,21 +29,8 @@ pipeline {
     post {
         always {
             echo 'Test execution completed.'
+            archiveArtifacts artifacts: '**/cypress/reports/mochawesome/**', fingerprint: true
 
-            // Archive screenshots and reports
-            archiveArtifacts artifacts: '**/cypress/{screenshots,reports}/**', fingerprint: true
-
-            // Publish HTML report to Jenkins
-            publishHTML(target: [
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'cypress/reports/html',
-                reportFiles: 'index.html',
-                reportName: 'Cypress Test Report'
-            ])
-
-            // Send email notification
             emailext(
                 subject: "Cypress Test Report: Build #${env.BUILD_NUMBER}",
                 body: """
@@ -62,79 +40,10 @@ pipeline {
                 - Build Number: ${env.BUILD_NUMBER}
                 - Status: ${currentBuild.currentResult}
 
-                View Full Report: ${env.BUILD_URL}/HTML_20Report/
+                Logs: ${env.BUILD_URL}
                 """,
-                to: 'thangavelra03@gmail.com'
-            )
-        }
-    }
-}
-pipeline {
-    agent any
-
-    environment {
-        CI = 'true'
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/thangavel03/Login-Automation'
-            }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                bat 'npm ci'  // Clean install for consistent results
-                bat 'npx cypress install'
-            }
-        }
-
-        stage('Run Cypress Tests') {
-            steps {
-                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-                    bat 'npx cypress run --browser chrome --headless'
-                }
-            }
-        }
-
-        stage('Generate Report') {
-            steps {
-                bat 'npx mochawesome-merge "cypress/reports/*.json" -o mochareport.json'
-                bat 'npx marge mochareport.json --reportDir cypress/reports/html'
-            }
-        }
-    }
-
-    post {
-        always {
-            echo 'Test execution completed.'
-
-            // Archive screenshots and reports
-            archiveArtifacts artifacts: '**/cypress/{screenshots,reports}/**', fingerprint: true
-
-            // Publish HTML report to Jenkins
-            publishHTML(target: [
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'cypress/reports/html',
-                reportFiles: 'index.html',
-                reportName: 'Cypress Test Report'
-            ])
-
-            // Send email notification
-            emailext(
-                subject: "Cypress Test Report: Build #${env.BUILD_NUMBER}",
-                body: """
-                Jenkins Cypress Test Report
-
-                - Job: ${env.JOB_NAME}
-                - Build Number: ${env.BUILD_NUMBER}
-                - Status: ${currentBuild.currentResult}
-
-                View Full Report: ${env.BUILD_URL}/HTML_20Report/
-                """,
+                attachLog: true,
+                attachmentsPattern: '**/cypress/reports/mochawesome/*.html',
                 to: 'thangavelra03@gmail.com'
             )
         }
